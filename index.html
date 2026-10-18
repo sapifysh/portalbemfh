@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Awesome Opus 5.5 Videos</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#0d0d0f;color:#eee}
+header{padding:24px 16px;max-width:1200px;margin:auto}h1{margin:0 0 6px;font-size:28px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+input,select{padding:10px 12px;border-radius:10px;border:1px solid #333;background:#18181b;color:#eee;font-size:14px}
+input{flex:1;min-width:200px}
+main{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:0 16px 40px;max-width:1200px;margin:auto}
+.card{background:#18181b;border:1px solid #27272a;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.card img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#222}
+.body{padding:12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.meta{font-size:13px;color:#a1a1aa}.meta a{color:#93c5fd;text-decoration:none}
+.tags span{display:inline-block;font-size:11px;background:#27272a;padding:2px 8px;border-radius:99px;margin:0 4px 4px 0}
+.prompt{font-size:13px;color:#d4d4d8;max-height:90px;overflow:hidden;white-space:pre-wrap}
+.actions{display:flex;gap:8px;margin-top:auto}
+button,.btn{flex:1;padding:8px;border-radius:8px;border:0;background:#3f3f46;color:#fff;font-size:13px;cursor:pointer;text-align:center;text-decoration:none}
+#count{color:#a1a1aa;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Awesome Opus 5.5 Videos</h1>
+  <div id="count">Memuat…</div>
+  <div class="bar">
+    <input id="q" placeholder="Cari prompt atau kreator…">
+    <select id="cat"><option value="">Semua kategori</option></select>
+  </div>
+</header>
+<main id="grid"></main>
+<script>
+let all=[];const grid=document.getElementById('grid'),q=document.getElementById('q'),cat=document.getElementById('cat'),count=document.getElementById('count');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function render(){
+  const t=q.value.toLowerCase(),c=cat.value;
+  const list=all.filter(v=>(!c||v.category===c)&&(!t||(v.prompt||'').toLowerCase().includes(t)||(v.author||'').toLowerCase().includes(t)));
+  count.textContent=list.length+' dari '+all.length+' video';
+  grid.innerHTML=list.slice(0,300).map((v,i)=>`<div class="card">
+    ${v.poster_url?`<img loading="lazy" src="${esc(v.poster_url)}" alt="">`:''}
+    <div class="body">
+      <div class="meta"><a href="${esc(v.post_url)}" target="_blank">@${esc(v.author)}</a> · ${esc(v.category)}</div>
+      <div class="tags">${(v.tech_tags||[]).map(x=>`<span>${esc(x)}</span>`).join('')}</div>
+      <div class="prompt">${esc(v.prompt)}</div>
+      <div class="actions">
+        <button data-slug="${esc(v.slug)}">Salin prompt</button>
+        ${v.skillry_url&&v.has_remake?`<a class="btn" href="${esc(v.skillry_url)}" target="_blank">Lihat remake</a>`:''}
+      </div>
+    </div></div>`).join('');
+}
+grid.addEventListener('click',e=>{const b=e.target.closest('button[data-slug]');if(!b)return;
+  const v=all.find(x=>x.slug===b.dataset.slug);navigator.clipboard.writeText(v.prompt||'');b.textContent='Tersalin ✓';setTimeout(()=>b.textContent='Salin prompt',1500);});
+q.addEventListener('input',render);cat.addEventListener('change',render);
+fetch('data/videos.json').then(r=>r.json()).then(d=>{all=d;
+  [...new Set(d.map(v=>v.category).filter(Boolean))].sort().forEach(c=>cat.insertAdjacentHTML('beforeend',`<option>${esc(c)}</option>`));render();})
+  .catch(()=>count.textContent='Gagal memuat data/videos.json');
+</script>
+</body>
+</html>
